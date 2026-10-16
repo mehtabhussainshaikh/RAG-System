@@ -122,3 +122,58 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+# DTO
+npx nest g class users/dto/create-user.dto --flat --no-spec
+
+# Custom validator
+npx nest g class common/validators/is-unique.validator --flat --no-spec
+
+# Interceptor
+npx nest g interceptor common/interceptors/response --flat --no-spec
+
+# Middleware
+npx nest g middleware common/middleware/logger --flat --no-spec
+
+# Class
+npx nest g class common/classes/pagination --flat --no-spec
+
+# Controller
+npx nest g controller users --no-spec
+
+# Service
+npx nest g service users --no-spec
+
+# Repository (class scaffold)
+npx nest g class users/users.repository --flat --no-spec
+
+# Utility class
+npx nest g class common/utils/date-util --flat --no-spec
+
+# Utility functions file (Linux/macOS)
+mkdir -p src/common/utils
+touch src/common/utils/date.util.ts
+
+# Module
+npx nest g module users
+
+# Guard
+npx nest g guard common/guards/auth --flat --no-spec
+
+# Pipe
+npx nest g pipe common/pipes/parse-id --flat --no-spec
+
+# Exception filter
+npx nest g filter common/filters/http-exception --flat --no-spec
+
+# Decorator
+npx nest g decorator common/decorators/current-user --flat
+
+# Interface
+npx nest g interface users/interfaces/user --flat
+
+# Complete CRUD resource
+npx nest g resource products --no-spec
+
+# List available generators
+npx nest generate --help
