@@ -5,7 +5,10 @@ import { AuthRepository } from './auth.repository.js';
 import { HashingServiceTsService } from '../common/hashing/hashing.service.ts/hashing.service.ts.service.js';
 
 @Module({
-  providers: [AuthService, HashingServiceTsService, AuthRepository],
+  providers: [
+    AuthService,
+    HashingServiceTsService,
+    AuthRepository],
   controllers: [AuthController]
 })
 export class AuthModule { }
