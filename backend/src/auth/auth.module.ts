@@ -8,7 +8,8 @@ import { HashingServiceTsService } from '../common/hashing/hashing.service.ts/ha
   providers: [
     AuthService,
     HashingServiceTsService,
-    AuthRepository],
+    AuthRepository
+  ],
   controllers: [AuthController]
 })
 export class AuthModule { }

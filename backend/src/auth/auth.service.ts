@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create.user.dto.js';
 import { HashingServiceTsService } from '../common/hashing/hashing.service.ts/hashing.service.ts.service.js';
 import { AuthRepository } from './auth.repository.js';
@@ -58,12 +58,46 @@ export class AuthService {
             throw new Error('Invalid credentials');
         }
         const accessToken = await this.createAccess_token(user);
+        const refreshToken = await this.createRefresh_token(user);
 
         delete user.password;
-        return { ...user, accessToken };
+        return { ...user, accessToken, refreshToken };
     }
 
     async createAccess_token(user: User): Promise<string> {
-        return this.jwtService.signAsync({ userId: user.id } , { expiresIn: '1h' });
+        return this.jwtService.signAsync({
+            sub: user.id,
+            type: 'access',
+        }, {
+            secret: process.env.JWT_ACCESS_SECRET,
+            expiresIn: '1h'
+        });
     }
+
+    async createRefresh_token(user: User): Promise<string> {
+        return this.jwtService.signAsync({ sub: user.id, type: 'refresh' }, {
+            secret: process.env.JWT_REFRESH_SECRET,
+            expiresIn: '7d'
+        });
+    }
+
+    async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
+        try {
+            const payload = await this.jwtService.verifyAsync(refreshToken, {
+                secret: process.env.JWT_REFRESH_SECRET,
+            });
+             
+            if(payload.type !== 'refresh') {
+                throw new Error('Invalid token type');
+            }   
+
+            const token = await this.createAccess_token({ id: payload.sub } as User);
+            return { accessToken: token };
+             
+        } catch (error) {
+            this.logger.error('Error verifying refresh token', error);
+            throw new UnauthorizedException('Invalid refresh token');
+        }
+    }
+
 }
