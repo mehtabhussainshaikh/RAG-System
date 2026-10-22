@@ -57,6 +57,25 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Authentication and roles
+
+Protected endpoints expect an access token in the request header:
+
+```bash
+Authorization: Bearer <access-token>
+```
+
+Public registration always creates a `USER`. To promote an existing account to
+`ADMIN`, run:
+
+```bash
+npm run admin:promote -- user@example.com
+```
+
+`GET /` is available to authenticated users and administrators. `GET /admin`
+is restricted to administrators. `GET /health`, `POST /auth/register`, and
+`POST /auth/login` remain public.
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.

@@ -6,6 +6,10 @@ export class AppService {
     return 'Hello World!';
   }
 
+  getAdminHello(): string {
+    return 'Hello Admin!';
+  }
+
   getHealth(): string {
     return 'OK';
   }

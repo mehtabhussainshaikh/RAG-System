@@ -18,6 +18,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
+    "preadmin:promote": "npm run build --silent",
+    "admin:promote": "node scripts/promote-admin.mjs",
     "postinstall": "prisma generate",
     "lint": "oxlint --type-aware src/ test/",
     "test": "vitest run",

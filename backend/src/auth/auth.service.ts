@@ -1,69 +1,87 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create.user.dto.js';
 import { HashingServiceTsService } from '../common/hashing/hashing.service.ts/hashing.service.ts.service.js';
 import { AuthRepository } from './auth.repository.js';
-import { Logger } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
+import { JwtService } from '@nestjs/jwt';
+import { LoginUserDto } from './dto/login-user.dto.js';
 
-
-interface User {
-    id: number;
-    name: string;
-    email: string;
-    password: string;
-    phone: string;
-    roleId: number;
+interface TokenUser {
+  id: number;
 }
 
 @Injectable()
 export class AuthService {
+  constructor(
+    private readonly hashingService: HashingServiceTsService,
+    private readonly authRepository: AuthRepository,
+    private readonly jwtService: JwtService,
+  ) {}
 
-    private readonly logger = new Logger(AuthService.name);
+  async registerUser(createUserDto: CreateUserDto) {
+    const isUserExists = await this.authRepository.findUserByEmail(
+      createUserDto.email,
+    );
 
-    constructor(
-        private readonly hashingService: HashingServiceTsService,
-        private readonly authRepository: AuthRepository,
-        private readonly jwtService: JwtService,
-    ) { }
-
-    async registerUser(createUserDto: CreateUserDto): Promise<any> {
-        const isUserExists = await this.authRepository.findUserByEmail(createUserDto.email);
-
-        if (isUserExists) {
-            throw new Error('User with this email already exists');
-        }
-
-        const user = await this.authRepository.createUser({
-            name: createUserDto.name,
-            email: createUserDto.email,
-            password: await this.hashingService.hashPassword(createUserDto.password),
-            phone: createUserDto.phone,
-            role: createUserDto.role,
-        });
-
-        delete user.password;
-        return user;
+    if (isUserExists) {
+      throw new ConflictException('User with this email already exists');
     }
 
-    async loginUser(loginUserDto: any): Promise<any> {
-        const { email, name, phone, password } = loginUserDto;
+    const user = await this.authRepository.createUser({
+      name: createUserDto.name,
+      email: createUserDto.email,
+      password: await this.hashingService.hashPassword(createUserDto.password),
+      phone: createUserDto.phone,
+    });
 
-        const user = await this.authRepository.loginUser(email, name, phone);
-        if (!user) {
-            throw new Error('Invalid credentials');
-        }
+    return this.toPublicUser(user);
+  }
 
-        const isPasswordValid = await this.hashingService.verifyPassword(password, user.password);
-        if (!isPasswordValid) {
-            throw new Error('Invalid credentials');
-        }
-        const accessToken = await this.createAccess_token(user);
+  async loginUser(loginUserDto: LoginUserDto) {
+    const { email, name, phone, password } = loginUserDto;
 
-        delete user.password;
-        return { ...user, accessToken };
+    const user = await this.authRepository.loginUser(email, name, phone);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    async createAccess_token(user: User): Promise<string> {
-        return this.jwtService.signAsync({ userId: user.id } , { expiresIn: '1h' });
+    const isPasswordValid = await this.hashingService.verifyPassword(
+      password,
+      user.password,
+    );
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
     }
+
+    const accessToken = await this.createAccessToken(user);
+
+    return { ...this.toPublicUser(user), accessToken };
+  }
+
+  async createAccessToken(user: TokenUser): Promise<string> {
+    return this.jwtService.signAsync({ userId: user.id }, { expiresIn: '1h' });
+  }
+
+  private toPublicUser(user: {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    createdAt: Date;
+    updatedAt: Date;
+    role: { name: string };
+  }) {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role.name,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+  }
 }

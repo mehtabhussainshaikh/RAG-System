@@ -5,10 +5,14 @@ import type {
   AccessTokenPayload,
   AuthenticatedRequest,
 } from './authenticated-request.js';
+import { AuthorizationService } from './authorization.service.js';
 
 @Injectable()
 export class AuthenticationMiddleware implements NestMiddleware {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly authorizationService: AuthorizationService,
+  ) {}
 
   async use(
     request: AuthenticatedRequest,
@@ -17,17 +21,24 @@ export class AuthenticationMiddleware implements NestMiddleware {
   ): Promise<void> {
     const token = this.extractBearerToken(request.headers.authorization);
 
-    if (token) {
-      try {
-        const payload =
-          await this.jwtService.verifyAsync<AccessTokenPayload>(token);
+    if (!token) {
+      next();
+      return;
+    }
 
-        if (typeof payload.userId === 'number') {
-          request.auth = payload;
-        }
-      } catch {
-        request.auth = undefined;
-      }
+    let payload: AccessTokenPayload;
+
+    try {
+      payload = await this.jwtService.verifyAsync<AccessTokenPayload>(token);
+    } catch {
+      next();
+      return;
+    }
+
+    if (Number.isInteger(payload.userId) && payload.userId > 0) {
+      request.auth = await this.authorizationService.findAuthenticatedUser(
+        payload.userId,
+      );
     }
 
     next();
